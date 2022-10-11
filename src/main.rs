@@ -1,3 +1,5 @@
+pub mod render;
+
 use glow::*;
 use sdl2::{
     event::{Event, WindowEvent},
@@ -5,15 +7,9 @@ use sdl2::{
     video::GLProfile,
 };
 
-pub const WINDOW_WIDTH: u32 = 1280;
-pub const WINDOW_HEIGHT: u32 = 720;
+use crate::render::renderer::{Renderer, WINDOW_HEIGHT, WINDOW_WIDTH};
 
-fn init_sdl() -> (
-    sdl2::Sdl,
-    sdl2::video::Window,
-    glow::Context,
-    sdl2::video::GLContext,
-) {
+fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, Renderer) {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -33,17 +29,19 @@ fn init_sdl() -> (
 
     let gl_context = window.gl_create_context().unwrap();
     let gl = unsafe {
-        glow::Context::from_loader_function(|s| video_subsystem.gl_get_proc_address(s) as *const _)
+        Context::from_loader_function(|s| video_subsystem.gl_get_proc_address(s) as *const _)
     };
 
     debug_assert_eq!(gl_attr.context_profile(), GLProfile::Core);
     debug_assert_eq!(gl_attr.context_version(), (3, 3));
 
-    (sdl_context, window, gl, gl_context)
+    let renderer = Renderer::new(gl, gl_context);
+
+    (sdl_context, window, renderer)
 }
 
 fn main() {
-    let (sdl_context, window, gl, _gl_context) = init_sdl();
+    let (sdl_context, window, renderer) = init_sdl();
 
     let timer = sdl_context.timer().unwrap();
     let mut ticks = timer.performance_counter();
@@ -59,19 +57,6 @@ fn main() {
     mouse.warp_mouse_in_window(&window, WINDOW_WIDTH as i32 / 2, WINDOW_HEIGHT as i32 / 2);
     mouse.set_relative_mouse_mode(true);
     let mut grab_mouse = true;
-
-    unsafe {
-        // Enable MSAA anti-aliasing
-        // gl::Enable(gl::MULTISAMPLE);
-        gl.enable(glow::DEPTH_TEST);
-        gl.enable(glow::CULL_FACE);
-        gl.polygon_mode(glow::FRONT_AND_BACK, glow::LINE);
-
-        gl.viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
-
-        gl.clear_color(0.5, 0.9, 1.0, 1.0);
-        gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-    }
 
     window.gl_swap_window();
 
@@ -137,14 +122,14 @@ fn main() {
 
         let alpha = acc as f32 / fixed_timestep as f32;
 
-        // render(game_state, alpha);
-        unsafe {
-            gl.clear_color(0.5, 0.9, 1.0, 1.0);
-            gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-        }
+        render(&renderer, alpha);
 
         window.gl_swap_window();
 
         // std::thread::sleep(sleep_duration);
     }
+}
+
+fn render(renderer: &Renderer, _alpha: f32) {
+    renderer.clear();
 }
