@@ -7,6 +7,7 @@ pub const WINDOW_HEIGHT: u32 = 720;
 pub struct Renderer {
     gl: Context,
     _gl_context: GLContext,
+    quad_indices: Vec<u32>,
 }
 
 impl Renderer {
@@ -24,9 +25,12 @@ impl Renderer {
             gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
         }
 
+        let quad_indices = create_quad_indices(24);
+
         Self {
             gl,
             _gl_context: gl_context,
+            quad_indices,
         }
     }
 
@@ -36,4 +40,21 @@ impl Renderer {
             self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
         }
     }
+
+    pub fn quad_indices(&self) -> &Vec<u32> {
+        &self.quad_indices
+    }
+}
+
+fn create_quad_indices(vert_len: usize) -> Vec<u32> {
+    let indices = [0, 1, 2, 2, 3, 0]
+        .iter()
+        .copied()
+        .cycle()
+        .take((vert_len / 4) * 6)
+        .enumerate()
+        .map(|(i, v)| ((i / 6) * 4 + v) as u32)
+        .collect();
+
+    indices
 }
