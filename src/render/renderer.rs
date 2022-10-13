@@ -1,6 +1,8 @@
 use glow::*;
 use sdl2::video::GLContext;
 
+use super::shader::ShaderProgram;
+
 pub const WINDOW_WIDTH: u32 = 1280;
 pub const WINDOW_HEIGHT: u32 = 720;
 
@@ -8,6 +10,7 @@ pub struct Renderer {
     gl: Context,
     _gl_context: GLContext,
     quad_indices: Vec<u32>,
+    shader_program: ShaderProgram,
 }
 
 impl Renderer {
@@ -26,12 +29,23 @@ impl Renderer {
         }
 
         let quad_indices = create_quad_indices(24);
+        let shader_program = ShaderProgram::new(
+            &gl,
+            include_str!("default.vert"),
+            include_str!("default.frag"),
+        );
 
         Self {
             gl,
             _gl_context: gl_context,
             quad_indices,
+            shader_program,
         }
+    }
+
+    /// # Safety
+    pub unsafe fn gl(&self) -> &Context {
+        &self.gl
     }
 
     pub fn clear(&self) {
@@ -43,6 +57,14 @@ impl Renderer {
 
     pub fn quad_indices(&self) -> &Vec<u32> {
         &self.quad_indices
+    }
+}
+
+impl Drop for Renderer {
+    fn drop(&mut self) {
+        unsafe {
+            self.gl.delete_program(self.shader_program.native_program());
+        }
     }
 }
 
