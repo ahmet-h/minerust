@@ -1,7 +1,7 @@
 use glow::*;
 use sdl2::video::GLContext;
 
-use super::shader::ShaderProgram;
+use super::{model::Model, shader::ShaderProgram};
 
 pub const WINDOW_WIDTH: u32 = 1280;
 pub const WINDOW_HEIGHT: u32 = 720;
@@ -58,6 +58,15 @@ impl Renderer {
     pub fn quad_indices(&self) -> &Vec<u32> {
         &self.quad_indices
     }
+
+    pub fn render(&self, model: &Model) {
+        unsafe {
+            self.gl.bind_vertex_array(Some(model.vao()));
+            self.gl
+                .draw_elements(TRIANGLES, model.len() as i32, UNSIGNED_INT, 0);
+            self.gl.bind_vertex_array(None);
+        }
+    }
 }
 
 impl Drop for Renderer {
@@ -71,8 +80,8 @@ impl Drop for Renderer {
 fn create_quad_indices(vert_len: usize) -> Vec<u32> {
     let indices = [0, 1, 2, 2, 3, 0]
         .iter()
-        .copied()
         .cycle()
+        .copied()
         .take((vert_len / 4) * 6)
         .enumerate()
         .map(|(i, v)| ((i / 6) * 4 + v) as u32)

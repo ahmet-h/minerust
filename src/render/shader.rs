@@ -1,7 +1,7 @@
 use glow::*;
 
 pub struct ShaderProgram {
-    program: NativeProgram,
+    program: Program,
 }
 
 impl ShaderProgram {
