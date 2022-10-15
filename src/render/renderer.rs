@@ -10,7 +10,7 @@ pub struct Renderer {
     gl: Context,
     _gl_context: GLContext,
     quad_indices: Vec<u32>,
-    shader_program: ShaderProgram,
+    geometry_shader: ShaderProgram,
 }
 
 impl Renderer {
@@ -20,16 +20,15 @@ impl Renderer {
             // gl.enable(MULTISAMPLE);
             gl.enable(DEPTH_TEST);
             gl.enable(CULL_FACE);
-            gl.polygon_mode(FRONT_AND_BACK, LINE);
+            // gl.polygon_mode(FRONT_AND_BACK, LINE);
 
             gl.viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
 
-            gl.clear_color(0.5, 0.9, 1.0, 1.0);
-            gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+            let g_buffer = create_g_buffer(&gl);
         }
 
         let quad_indices = create_quad_indices(24);
-        let shader_program = ShaderProgram::new(
+        let geometry_shader = ShaderProgram::new(
             &gl,
             include_str!("default.vert"),
             include_str!("default.frag"),
@@ -39,7 +38,7 @@ impl Renderer {
             gl,
             _gl_context: gl_context,
             quad_indices,
-            shader_program,
+            geometry_shader,
         }
     }
 
@@ -50,7 +49,7 @@ impl Renderer {
 
     pub fn clear(&self) {
         unsafe {
-            self.gl.clear_color(0.5, 0.9, 1.0, 1.0);
+            self.gl.clear_color(0., 0., 0., 1.);
             self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
         }
     }
@@ -72,7 +71,8 @@ impl Renderer {
 impl Drop for Renderer {
     fn drop(&mut self) {
         unsafe {
-            self.gl.delete_program(self.shader_program.native_program());
+            self.gl
+                .delete_program(self.geometry_shader.native_program());
         }
     }
 }
@@ -88,4 +88,85 @@ fn create_quad_indices(vert_len: usize) -> Vec<u32> {
         .collect();
 
     indices
+}
+
+unsafe fn create_color_buffer(gl: &Context, format: u32, type_: u32, attachment: u32) -> Texture {
+    let texture = gl.create_texture().expect("Couldn't create texture.");
+    gl.bind_texture(TEXTURE_2D, Some(texture));
+
+    gl.tex_image_2d(
+        TEXTURE_2D,
+        0,
+        format as i32,
+        WINDOW_WIDTH as i32,
+        WINDOW_HEIGHT as i32,
+        0,
+        RGBA,
+        type_,
+        None,
+    );
+    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
+    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST as i32);
+
+    gl.framebuffer_texture_2d(FRAMEBUFFER, attachment, TEXTURE_2D, Some(texture), 0);
+
+    gl.bind_texture(TEXTURE_2D, None);
+
+    texture
+}
+
+struct GBuffer {
+    framebuffer: Framebuffer,
+    position: Texture,
+    normal: Texture,
+    albedo_spec: Texture,
+}
+
+unsafe fn create_g_buffer(gl: &Context) -> GBuffer {
+    let g_buffer = gl
+        .create_framebuffer()
+        .expect("Couldn't create framebuffer.");
+
+    gl.bind_framebuffer(FRAMEBUFFER, Some(g_buffer));
+
+    let g_position = create_color_buffer(&gl, RGBA16F, FLOAT, COLOR_ATTACHMENT0);
+    let g_normal = create_color_buffer(&gl, RGBA16F, FLOAT, COLOR_ATTACHMENT1);
+    let g_albedo_spec = create_color_buffer(&gl, RGBA, UNSIGNED_BYTE, COLOR_ATTACHMENT2);
+
+    let attachments = [COLOR_ATTACHMENT0, COLOR_ATTACHMENT1, COLOR_ATTACHMENT2];
+
+    gl.draw_buffers(&attachments);
+
+    let depth_buffer = gl
+        .create_renderbuffer()
+        .expect("Couldn't create renderbuffer.");
+
+    gl.bind_renderbuffer(RENDERBUFFER, Some(depth_buffer));
+
+    gl.renderbuffer_storage(
+        RENDERBUFFER,
+        DEPTH_COMPONENT,
+        WINDOW_WIDTH as i32,
+        WINDOW_HEIGHT as i32,
+    );
+
+    gl.framebuffer_renderbuffer(
+        FRAMEBUFFER,
+        DEPTH_ATTACHMENT,
+        RENDERBUFFER,
+        Some(depth_buffer),
+    );
+
+    if gl.check_framebuffer_status(FRAMEBUFFER) != FRAMEBUFFER_COMPLETE {
+        panic!("Framebuffer is not complete.");
+    }
+
+    gl.bind_framebuffer(FRAMEBUFFER, None);
+
+    GBuffer {
+        framebuffer: g_buffer,
+        position: g_position,
+        normal: g_normal,
+        albedo_spec: g_albedo_spec,
+    }
 }

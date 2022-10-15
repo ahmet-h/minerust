@@ -13,7 +13,7 @@ pub struct Model {
 
 impl Model {
     pub fn new(gl: &Context, indices: &Vec<u32>, mesh: &Mesh) -> Self {
-        let mut model = unsafe {
+        let model = unsafe {
             let vao = gl
                 .create_vertex_array()
                 .expect("Couldn't create vertex array.");
