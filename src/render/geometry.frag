@@ -11,6 +11,6 @@ in vec2 tex_coords;
 void main() {
     g_position = position;
     g_normal = normal;
-    g_albedo_spec.rgb = vec3(0.8, 0.4, 0.4);
+    g_albedo_spec.rgb = vec3(0.8, 0.5, 0.2);
     g_albedo_spec.a = 0.2;
 }

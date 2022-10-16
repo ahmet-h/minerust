@@ -27,13 +27,13 @@ impl Renderer {
         let quad_indices = create_quad_indices(24);
         let geometry_shader = ShaderProgram::new(
             &gl,
-            include_str!("g_buffer.vert"),
-            include_str!("g_buffer.frag"),
+            include_str!("geometry.vert"),
+            include_str!("geometry.frag"),
         );
         let shader = ShaderProgram::new(
             &gl,
-            include_str!("default.vert"),
-            include_str!("default.frag"),
+            include_str!("lighting.vert"),
+            include_str!("lighting.frag"),
         );
 
         unsafe {

@@ -14,7 +14,7 @@ void main() {
     vec3 diffuse = texture(g_albedo_spec, tex_coords).rgb;
     float specular = texture(g_albedo_spec, tex_coords).a;
 
-    vec3 lighting = diffuse * 0.2;
+    vec3 lighting = diffuse * 0.5;
 
     color = vec4(lighting, 1.0);
 }
