@@ -79,6 +79,7 @@ impl Camera {
 
     fn get_projection_matrix(&self, aspect_ratio: f32) -> Mat4 {
         Mat4::perspective_rh_gl(self.fov.to_radians(), aspect_ratio, self.near, self.far)
+            * Mat4::from_scale(vec3(1., -1., 1.)) // Why??
     }
 
     pub fn update_view_matrix(&mut self) {
@@ -111,7 +112,7 @@ impl Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self {
-            pos: vec3(0., 0., -3.),
+            pos: vec3(0., 0., 0.),
             front: vec3(0., 0., 1.),
             up: vec3(0., 1., 0.),
             right: vec3(-1., 0., 0.),

@@ -1,4 +1,5 @@
 pub mod render;
+pub mod state;
 
 use glow::*;
 use sdl2::{
@@ -7,9 +8,12 @@ use sdl2::{
     video::GLProfile,
 };
 
-use crate::render::renderer::{Renderer, WINDOW_HEIGHT, WINDOW_WIDTH};
+use crate::{
+    render::renderer::{Renderer, WINDOW_HEIGHT, WINDOW_WIDTH},
+    state::GameState,
+};
 
-fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, Renderer) {
+fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, GameState) {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
 
@@ -35,13 +39,13 @@ fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, Renderer) {
     debug_assert_eq!(gl_attr.context_profile(), GLProfile::Core);
     debug_assert_eq!(gl_attr.context_version(), (3, 3));
 
-    let renderer = Renderer::new(gl, gl_context);
+    let game_state = GameState::new(gl, gl_context);
 
-    (sdl_context, window, renderer)
+    (sdl_context, window, game_state)
 }
 
 fn main() {
-    let (sdl_context, window, renderer) = init_sdl();
+    let (sdl_context, window, mut game_state) = init_sdl();
 
     let timer = sdl_context.timer().unwrap();
     let mut ticks = timer.performance_counter();
@@ -85,7 +89,7 @@ fn main() {
                 }
                 _ => {
                     if grab_mouse {
-                        // screen.handle_input(event);
+                        game_state.handle_input(event);
                     }
                 }
             }
@@ -115,14 +119,14 @@ fn main() {
 
             acc -= fixed_timestep;
 
-            // physics_update(game_state);
+            physics_update(&mut game_state);
         }
 
-        // update(game_state, delta as f32 / performance_freq as f32);
+        update(&mut game_state, delta as f32 / performance_freq as f32);
 
         let alpha = acc as f32 / fixed_timestep as f32;
 
-        render(&renderer, alpha);
+        render(&mut game_state, alpha);
 
         window.gl_swap_window();
 
@@ -130,6 +134,14 @@ fn main() {
     }
 }
 
-fn render(renderer: &Renderer, _alpha: f32) {
-    renderer.clear();
+fn physics_update(game_state: &mut GameState) {
+    game_state.physics_update();
+}
+
+fn update(game_state: &mut GameState, delta: f32) {
+    game_state.update(delta);
+}
+
+fn render(game_state: &mut GameState, _alpha: f32) {
+    game_state.draw();
 }

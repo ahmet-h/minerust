@@ -1,3 +1,4 @@
+use glam::{Mat4, Vec3};
 use glow::*;
 
 pub struct ShaderProgram {
@@ -56,5 +57,47 @@ impl ShaderProgram {
 
     pub fn native_program(&self) -> NativeProgram {
         self.program
+    }
+
+    pub fn set_used(&self, gl: &Context) {
+        unsafe {
+            gl.use_program(Some(self.program));
+        }
+    }
+
+    pub fn set_mat4(&self, gl: &Context, name: &str, value: Mat4) {
+        unsafe {
+            if let Some(location) = gl.get_uniform_location(self.program, name) {
+                let data_array = value.to_cols_array();
+                let data = core::slice::from_raw_parts(data_array.as_ptr(), data_array.len());
+
+                gl.uniform_matrix_4_f32_slice(Some(&location), false, data);
+            } else {
+                panic!("Couldn't find uniform: {}", name);
+            }
+        }
+    }
+
+    pub fn set_vec3(&self, gl: &Context, name: &str, value: Vec3) {
+        unsafe {
+            if let Some(location) = gl.get_uniform_location(self.program, name) {
+                let data_array = value.to_array();
+                let data = core::slice::from_raw_parts(data_array.as_ptr(), data_array.len());
+
+                gl.uniform_3_f32_slice(Some(&location), data);
+            } else {
+                panic!("Couldn't find uniform: {}", name);
+            }
+        }
+    }
+
+    pub fn set_int(&self, gl: &Context, name: &str, value: i32) {
+        unsafe {
+            if let Some(location) = gl.get_uniform_location(self.program, name) {
+                gl.uniform_1_i32(Some(&location), value);
+            } else {
+                panic!("Couldn't find uniform: {}", name);
+            }
+        }
     }
 }

@@ -9,7 +9,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub fn new(position: Vec3, normal: Vec3, tex_coords: Vec2, ao: f32) -> Self {
+    pub fn new(position: Vec3, normal: Vec3, tex_coords: Vec2) -> Self {
         Self {
             position,
             normal,
