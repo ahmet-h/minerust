@@ -1,6 +1,6 @@
-use glam::{vec2, vec3, Mat4, Vec3};
+use glam::{ivec2, vec2, vec3, IVec2, Mat4, Vec3};
 use glow::*;
-use sdl2::video::GLContext;
+use sdl2::video::{GLContext, Window};
 
 use super::{
     camera::Camera,
@@ -8,9 +8,6 @@ use super::{
     model::Model,
     shader::ShaderProgram,
 };
-
-pub const WINDOW_WIDTH: u32 = 1280;
-pub const WINDOW_HEIGHT: u32 = 720;
 
 pub struct Renderer {
     gl: Context,
@@ -20,10 +17,11 @@ pub struct Renderer {
     shader: ShaderProgram,
     g_buffer: GBuffer,
     screen_quad: Model,
+    dims: IVec2,
 }
 
 impl Renderer {
-    pub fn new(gl: Context, gl_context: GLContext) -> Self {
+    pub fn new(gl: Context, gl_context: GLContext, window: &Window) -> Self {
         let quad_indices = create_quad_indices(24);
         let geometry_shader = ShaderProgram::new(
             &gl,
@@ -36,6 +34,13 @@ impl Renderer {
             include_str!("lighting.frag"),
         );
 
+        let drawable_size = window.drawable_size();
+        let dims = ivec2(drawable_size.0 as i32, drawable_size.1 as i32);
+
+        let g_buffer = unsafe { create_g_buffer(&gl, &dims) };
+
+        let screen_quad = create_screen_quad(&gl, &quad_indices);
+
         unsafe {
             // Enable MSAA anti-aliasing
             // gl.enable(MULTISAMPLE);
@@ -43,25 +48,13 @@ impl Renderer {
             gl.enable(CULL_FACE);
             // gl.polygon_mode(FRONT_AND_BACK, LINE);
 
-            gl.viewport(0, 0, WINDOW_WIDTH as i32, WINDOW_HEIGHT as i32);
+            gl.viewport(0, 0, dims.x, dims.y);
         }
-
-        let g_buffer = unsafe { create_g_buffer(&gl) };
 
         shader.set_used(&gl);
         // shader.set_int(&gl, "g_position", 0);
         // shader.set_int(&gl, "g_normal", 1);
         shader.set_int(&gl, "g_albedo_spec", 2);
-
-        let mut screen_mesh = Mesh::new();
-        let temp_normal = Vec3::ZERO;
-        screen_mesh.push_quad(Quad::new(
-            Vertex::new(vec3(-1., -1., 0.), temp_normal, vec2(0., 0.)),
-            Vertex::new(vec3(1., -1., 0.), temp_normal, vec2(1., 0.)),
-            Vertex::new(vec3(1., 1., 0.), temp_normal, vec2(1., 1.)),
-            Vertex::new(vec3(-1., 1., 0.), temp_normal, vec2(0., 1.)),
-        ));
-        let screen_quad = Model::new(&gl, &quad_indices, &screen_mesh);
 
         Self {
             gl,
@@ -71,6 +64,7 @@ impl Renderer {
             shader,
             g_buffer,
             screen_quad,
+            dims,
         }
     }
 
@@ -101,7 +95,7 @@ impl Renderer {
 
             self.clear();
 
-            camera.update_projection_view_matrix(WINDOW_WIDTH as f32 / WINDOW_HEIGHT as f32);
+            camera.update_projection_view_matrix(self.dims.x as f32 / self.dims.y as f32);
 
             self.geometry_shader.set_used(&self.gl);
             self.geometry_shader
@@ -141,12 +135,12 @@ impl Renderer {
             self.gl.blit_framebuffer(
                 0,
                 0,
-                WINDOW_WIDTH as i32,
-                WINDOW_HEIGHT as i32,
+                self.dims.x,
+                self.dims.y,
                 0,
                 0,
-                WINDOW_WIDTH as i32,
-                WINDOW_HEIGHT as i32,
+                self.dims.x,
+                self.dims.y,
                 DEPTH_BUFFER_BIT,
                 NEAREST,
             );
@@ -180,6 +174,15 @@ impl Renderer {
             self.gl.bind_vertex_array(None);
         }
     }
+
+    pub fn handle_resize(&mut self, width: i32, height: i32) {
+        unsafe {
+            self.dims.x = width;
+            self.dims.y = height;
+
+            self.gl.viewport(0, 0, width, height);
+        }
+    }
 }
 
 impl Drop for Renderer {
@@ -204,31 +207,6 @@ fn create_quad_indices(vert_len: usize) -> Vec<u32> {
     indices
 }
 
-unsafe fn create_color_buffer(gl: &Context, format: u32, type_: u32, attachment: u32) -> Texture {
-    let texture = gl.create_texture().expect("Couldn't create texture.");
-    gl.bind_texture(TEXTURE_2D, Some(texture));
-
-    gl.tex_image_2d(
-        TEXTURE_2D,
-        0,
-        format as i32,
-        WINDOW_WIDTH as i32,
-        WINDOW_HEIGHT as i32,
-        0,
-        RGBA,
-        type_,
-        None,
-    );
-    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
-    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST as i32);
-
-    gl.framebuffer_texture_2d(FRAMEBUFFER, attachment, TEXTURE_2D, Some(texture), 0);
-
-    gl.bind_texture(TEXTURE_2D, None);
-
-    texture
-}
-
 struct GBuffer {
     framebuffer: Framebuffer,
     position: Texture,
@@ -236,16 +214,16 @@ struct GBuffer {
     albedo_spec: Texture,
 }
 
-unsafe fn create_g_buffer(gl: &Context) -> GBuffer {
+unsafe fn create_g_buffer(gl: &Context, dims: &IVec2) -> GBuffer {
     let g_buffer = gl
         .create_framebuffer()
         .expect("Couldn't create framebuffer.");
 
     gl.bind_framebuffer(FRAMEBUFFER, Some(g_buffer));
 
-    let g_position = create_color_buffer(gl, RGBA16F, FLOAT, COLOR_ATTACHMENT0);
-    let g_normal = create_color_buffer(gl, RGBA16F, FLOAT, COLOR_ATTACHMENT1);
-    let g_albedo_spec = create_color_buffer(gl, RGBA, UNSIGNED_BYTE, COLOR_ATTACHMENT2);
+    let g_position = create_color_buffer(gl, dims, RGBA16F, FLOAT, COLOR_ATTACHMENT0);
+    let g_normal = create_color_buffer(gl, dims, RGBA16F, FLOAT, COLOR_ATTACHMENT1);
+    let g_albedo_spec = create_color_buffer(gl, dims, RGBA, UNSIGNED_BYTE, COLOR_ATTACHMENT2);
 
     let attachments = [COLOR_ATTACHMENT0, COLOR_ATTACHMENT1, COLOR_ATTACHMENT2];
 
@@ -257,12 +235,7 @@ unsafe fn create_g_buffer(gl: &Context) -> GBuffer {
 
     gl.bind_renderbuffer(RENDERBUFFER, Some(depth_buffer));
 
-    gl.renderbuffer_storage(
-        RENDERBUFFER,
-        DEPTH_COMPONENT,
-        WINDOW_WIDTH as i32,
-        WINDOW_HEIGHT as i32,
-    );
+    gl.renderbuffer_storage(RENDERBUFFER, DEPTH_COMPONENT, dims.x, dims.y);
 
     gl.framebuffer_renderbuffer(
         FRAMEBUFFER,
@@ -283,4 +256,47 @@ unsafe fn create_g_buffer(gl: &Context) -> GBuffer {
         normal: g_normal,
         albedo_spec: g_albedo_spec,
     }
+}
+
+unsafe fn create_color_buffer(
+    gl: &Context,
+    dims: &IVec2,
+    format: u32,
+    type_: u32,
+    attachment: u32,
+) -> Texture {
+    let texture = gl.create_texture().expect("Couldn't create texture.");
+    gl.bind_texture(TEXTURE_2D, Some(texture));
+
+    gl.tex_image_2d(
+        TEXTURE_2D,
+        0,
+        format as i32,
+        dims.x,
+        dims.y,
+        0,
+        RGBA,
+        type_,
+        None,
+    );
+    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
+    gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST as i32);
+
+    gl.framebuffer_texture_2d(FRAMEBUFFER, attachment, TEXTURE_2D, Some(texture), 0);
+
+    gl.bind_texture(TEXTURE_2D, None);
+
+    texture
+}
+
+fn create_screen_quad(gl: &Context, quad_indices: &Vec<u32>) -> Model {
+    let mut screen_mesh = Mesh::new();
+    let temp_normal = Vec3::ZERO;
+    screen_mesh.push_quad(Quad::new(
+        Vertex::new(vec3(-1., -1., 0.), temp_normal, vec2(0., 0.)),
+        Vertex::new(vec3(1., -1., 0.), temp_normal, vec2(1., 0.)),
+        Vertex::new(vec3(1., 1., 0.), temp_normal, vec2(1., 1.)),
+        Vertex::new(vec3(-1., 1., 0.), temp_normal, vec2(0., 1.)),
+    ));
+    Model::new(gl, quad_indices, &screen_mesh)
 }

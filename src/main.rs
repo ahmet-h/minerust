@@ -8,10 +8,10 @@ use sdl2::{
     video::GLProfile,
 };
 
-use crate::{
-    render::renderer::{Renderer, WINDOW_HEIGHT, WINDOW_WIDTH},
-    state::GameState,
-};
+use crate::state::GameState;
+
+pub const WINDOW_WIDTH: u32 = 1280;
+pub const WINDOW_HEIGHT: u32 = 720;
 
 fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, GameState) {
     let sdl_context = sdl2::init().unwrap();
@@ -28,6 +28,7 @@ fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, GameState) {
     let window = video_subsystem
         .window("Minerust", WINDOW_WIDTH, WINDOW_HEIGHT)
         .opengl()
+        // .fullscreen_desktop()
         .build()
         .unwrap();
 
@@ -39,7 +40,7 @@ fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, GameState) {
     debug_assert_eq!(gl_attr.context_profile(), GLProfile::Core);
     debug_assert_eq!(gl_attr.context_version(), (3, 3));
 
-    let game_state = GameState::new(gl, gl_context);
+    let game_state = GameState::new(gl, gl_context, &window);
 
     (sdl_context, window, game_state)
 }
@@ -86,6 +87,13 @@ fn main() {
                     ..
                 } => {
                     grab_mouse = true;
+                }
+                Event::Window {
+                    win_event: WindowEvent::SizeChanged(w, h),
+                    ..
+                } => {
+                    println!("Window Resized: ({}, {})", w, h);
+                    game_state.handle_resize(&window);
                 }
                 _ => {
                     if grab_mouse {
