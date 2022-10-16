@@ -27,9 +27,9 @@ impl GameWorld {
         let mut mesh = Mesh::new();
         mesh.push_quad(Quad::new(
             Vertex::new(vec3(-5., 0., -5.), vec3(0., 1., 0.), Default::default()),
-            Vertex::new(vec3(5., 0., -5.), vec3(0., 1., 0.), Default::default()),
-            Vertex::new(vec3(5., 0., 5.), vec3(0., 1., 0.), Default::default()),
             Vertex::new(vec3(-5., 0., 5.), vec3(0., 1., 0.), Default::default()),
+            Vertex::new(vec3(5., 0., 5.), vec3(0., 1., 0.), Default::default()),
+            Vertex::new(vec3(5., 0., -5.), vec3(0., 1., 0.), Default::default()),
         ));
         let model = renderer.create_model(&mesh);
         let floor = world.spawn((1, model));

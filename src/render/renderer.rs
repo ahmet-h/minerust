@@ -56,10 +56,10 @@ impl Renderer {
         let mut screen_mesh = Mesh::new();
         let temp_normal = Vec3::ZERO;
         screen_mesh.push_quad(Quad::new(
-            Vertex::new(vec3(-1., -1., 0.), temp_normal, vec2(0., 1.)),
-            Vertex::new(vec3(1., -1., 0.), temp_normal, vec2(1., 1.)),
-            Vertex::new(vec3(1., 1., 0.), temp_normal, vec2(1., 0.)),
-            Vertex::new(vec3(-1., 1., 0.), temp_normal, vec2(0., 0.)),
+            Vertex::new(vec3(-1., -1., 0.), temp_normal, vec2(0., 0.)),
+            Vertex::new(vec3(1., -1., 0.), temp_normal, vec2(1., 0.)),
+            Vertex::new(vec3(1., 1., 0.), temp_normal, vec2(1., 1.)),
+            Vertex::new(vec3(-1., 1., 0.), temp_normal, vec2(0., 1.)),
         ));
         let screen_quad = Model::new(&gl, &quad_indices, &screen_mesh);
 
@@ -109,6 +109,7 @@ impl Renderer {
 
             self.gl.enable(DEPTH_TEST);
             // self.gl.polygon_mode(FRONT_AND_BACK, LINE);
+            // self.gl.disable(CULL_FACE);
         }
     }
 
@@ -116,6 +117,7 @@ impl Renderer {
         unsafe {
             self.gl.bind_framebuffer(FRAMEBUFFER, None);
             // self.gl.polygon_mode(FRONT_AND_BACK, FILL);
+            // self.gl.enable(CULL_FACE);
 
             self.clear();
 
