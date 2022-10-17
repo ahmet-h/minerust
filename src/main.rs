@@ -63,8 +63,6 @@ fn main() {
     mouse.set_relative_mouse_mode(true);
     let mut grab_mouse = true;
 
-    window.gl_swap_window();
-
     // let sleep_duration = Duration::new(0, 1_000_000_000u32 / 60);
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {
