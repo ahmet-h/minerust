@@ -2,6 +2,8 @@ use std::ops::Add;
 
 use glam::{vec3, Mat4, Vec3};
 
+use crate::state::input::InputState;
+
 pub struct Camera {
     pos: Vec3,
     front: Vec3,
@@ -13,8 +15,7 @@ pub struct Camera {
     fov: f32,
     near: f32,
     far: f32,
-    speed: f32,
-    move_dir: Vec3,
+    velocity: Vec3,
     max_speed: f32,
 
     view: Mat4,
@@ -30,6 +31,10 @@ impl Camera {
         };
         camera.update();
         camera
+    }
+
+    pub fn translate(&mut self, v: Vec3) {
+        self.pos += v;
     }
 
     pub fn add_yaw(&mut self, x: f32) {
@@ -71,6 +76,45 @@ impl Camera {
 
         self.right = self.front.cross(self.world_up).normalize();
         self.up = self.right.cross(self.front).normalize();
+    }
+
+    pub fn update_movement(&mut self, input: &InputState, delta: f32) {
+        let mut move_dir = vec3(0., 0., 0.);
+
+        if input.forward ^ input.backward {
+            if input.forward {
+                move_dir.x = 1.;
+            } else if input.backward {
+                move_dir.x = -1.;
+            }
+        }
+
+        if input.right ^ input.left {
+            if input.right {
+                move_dir.z = 1.;
+            } else if input.left {
+                move_dir.z = -1.;
+            }
+        }
+
+        let move_dir_length_recip = move_dir.length_recip();
+
+        if move_dir.x != 0. {
+            self.velocity.x = move_dir.x * self.max_speed * move_dir_length_recip;
+        }
+
+        if move_dir.z != 0. {
+            self.velocity.z = move_dir.z * self.max_speed * move_dir_length_recip;
+        }
+
+        self.velocity.x -= 10. * delta * self.velocity.x.signum();
+        self.velocity.z -= 10. * delta * self.velocity.z.signum();
+
+        if self.velocity.length_squared() < 0.1 {
+            self.velocity = Vec3::ZERO;
+        }
+
+        self.translate((self.front * self.velocity.x + self.right * self.velocity.z) * delta);
     }
 
     fn get_view_matrix(&self) -> Mat4 {
@@ -121,8 +165,7 @@ impl Default for Camera {
             fov: 42.,
             near: 0.5,
             far: 400.,
-            speed: 0.,
-            move_dir: vec3(0., 0., 0.),
+            velocity: vec3(0., 0., 0.),
             max_speed: 5.0,
 
             projection: Default::default(),

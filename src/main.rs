@@ -36,6 +36,7 @@ fn init_sdl() -> (sdl2::Sdl, sdl2::video::Window, GameState) {
     let gl = unsafe {
         Context::from_loader_function(|s| video_subsystem.gl_get_proc_address(s) as *const _)
     };
+    // video_subsystem.gl_set_swap_interval(0).unwrap(); // disable vsync
 
     debug_assert_eq!(gl_attr.context_profile(), GLProfile::Core);
     debug_assert_eq!(gl_attr.context_version(), (3, 3));

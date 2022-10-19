@@ -44,7 +44,9 @@ impl GameWorld {
 
     pub fn physics_update(&mut self) {}
 
-    pub fn update(&mut self, _delta: f32) {}
+    pub fn update(&mut self, delta: f32) {
+        self.camera.update_movement(&self.input, delta);
+    }
 
     pub fn draw(&mut self, renderer: &Renderer) {
         renderer.prepare(&mut self.camera);
