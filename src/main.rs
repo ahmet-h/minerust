@@ -64,7 +64,7 @@ fn main() {
     mouse.set_relative_mouse_mode(true);
     let mut grab_mouse = true;
 
-    // let sleep_duration = Duration::new(0, 1_000_000_000u32 / 60);
+    // let sleep_duration = Duration::new(0, 1_000_000_000u32 / 1000);
     let mut event_pump = sdl_context.event_pump().unwrap();
     'running: loop {
         for event in event_pump.poll_iter() {

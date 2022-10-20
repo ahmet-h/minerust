@@ -7,6 +7,7 @@ use super::{
     mesh::{Mesh, Quad, Vertex},
     model::Model,
     shader::ShaderProgram,
+    texture::GameTexture,
 };
 
 pub struct Renderer {
@@ -52,8 +53,8 @@ impl Renderer {
         }
 
         shader.set_used(&gl);
-        // shader.set_int(&gl, "g_position", 0);
-        // shader.set_int(&gl, "g_normal", 1);
+        shader.set_int(&gl, "g_position", 0);
+        shader.set_int(&gl, "g_normal", 1);
         shader.set_int(&gl, "g_albedo_spec", 2);
 
         Self {
@@ -84,6 +85,15 @@ impl Renderer {
         Model::new(&self.gl, &self.quad_indices, mesh)
     }
 
+    pub fn create_texture(&self, path: &str) -> GameTexture {
+        GameTexture::new(&self.gl, path)
+    }
+
+    pub fn bind_texture(&self, texture: &GameTexture) {
+        texture.bind(&self.gl, 0);
+        self.geometry_shader.set_int(&self.gl, "texture_diffuse", 0);
+    }
+
     pub fn quad_indices(&self) -> &Vec<u32> {
         &self.quad_indices
     }
@@ -107,7 +117,7 @@ impl Renderer {
         }
     }
 
-    pub fn end(&self) {
+    pub fn end(&self, camera: &Camera) {
         unsafe {
             self.gl.bind_framebuffer(FRAMEBUFFER, None);
             // self.gl.polygon_mode(FRONT_AND_BACK, FILL);
@@ -126,6 +136,8 @@ impl Renderer {
                 .bind_texture(TEXTURE_2D, Some(self.g_buffer.albedo_spec));
 
             self.gl.disable(DEPTH_TEST);
+
+            self.shader.set_vec3(&self.gl, "view_pos", camera.pos());
             self.render_screen_quad();
 
             self.gl

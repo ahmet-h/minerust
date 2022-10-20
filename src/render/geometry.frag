@@ -8,9 +8,11 @@ in vec3 position;
 in vec3 normal;
 in vec2 tex_coords;
 
+uniform sampler2D texture_diffuse;
+
 void main() {
     g_position = position;
     g_normal = normal;
-    g_albedo_spec.rgb = vec3(0.8, 0.5, 0.2);
-    g_albedo_spec.a = 0.2;
+    g_albedo_spec.rgb = texture(texture_diffuse, tex_coords).rgb;
+    g_albedo_spec.a = 0.4;
 }
