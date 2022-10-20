@@ -102,16 +102,22 @@ impl Camera {
         if move_dir.x != 0. {
             self.velocity.x = move_dir.x * self.max_speed * move_dir_length_recip;
         }
-
         if move_dir.z != 0. {
             self.velocity.z = move_dir.z * self.max_speed * move_dir_length_recip;
         }
 
-        self.velocity.x -= 10. * delta * self.velocity.x.signum();
-        self.velocity.z -= 10. * delta * self.velocity.z.signum();
+        if self.velocity.x != 0.0 {
+            self.velocity.x -= 10. * delta * self.velocity.x.signum();
+        }
+        if self.velocity.z != 0.0 {
+            self.velocity.z -= 10. * delta * self.velocity.z.signum();
+        }
 
-        if self.velocity.length_squared() < 0.1 {
-            self.velocity = Vec3::ZERO;
+        if self.velocity.x.abs() < 0.1 {
+            self.velocity.x = 0.;
+        }
+        if self.velocity.z.abs() < 0.1 {
+            self.velocity.z = 0.;
         }
 
         self.translate((self.front * self.velocity.x + self.right * self.velocity.z) * delta);
