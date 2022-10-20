@@ -106,17 +106,19 @@ impl Camera {
             self.velocity.z = move_dir.z * self.max_speed * move_dir_length_recip;
         }
 
+        let friction = 10. * delta;
+
         if self.velocity.x != 0.0 {
-            self.velocity.x -= 10. * delta * self.velocity.x.signum();
+            self.velocity.x -= friction * self.velocity.x.signum();
         }
         if self.velocity.z != 0.0 {
-            self.velocity.z -= 10. * delta * self.velocity.z.signum();
+            self.velocity.z -= friction * self.velocity.z.signum();
         }
 
-        if self.velocity.x.abs() < 0.1 {
+        if self.velocity.x.abs() < friction {
             self.velocity.x = 0.;
         }
-        if self.velocity.z.abs() < 0.1 {
+        if self.velocity.z.abs() < friction {
             self.velocity.z = 0.;
         }
 
