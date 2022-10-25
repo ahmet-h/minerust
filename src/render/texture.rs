@@ -1,6 +1,7 @@
 use glow::*;
-use image::{io::Reader, DynamicImage, GenericImageView, ImageError, Pixel};
+use image::{io::Reader, DynamicImage, ImageError};
 
+#[derive(Clone, Copy)]
 pub struct GameTexture {
     id: Texture,
 }

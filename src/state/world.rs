@@ -10,7 +10,7 @@ use crate::render::{
     texture::GameTexture,
 };
 
-use super::input::InputState;
+use super::{ecs::transform::Transform, input::InputState};
 
 pub struct GameWorld {
     camera: Camera,
@@ -36,7 +36,15 @@ impl GameWorld {
 
         let texture = renderer.create_texture("assets/wood.png");
 
-        let floor = world.spawn((1, model, texture));
+        let floor = world.spawn((model, Transform::new(), texture));
+
+        let cube_mesh = Mesh::from_cube(1.0);
+        let cube_model = renderer.create_model(&cube_mesh);
+        let cube = world.spawn((
+            cube_model,
+            Transform::from_translation(vec3(0., 0.5, 0.)),
+            texture,
+        ));
 
         Self {
             camera,
@@ -55,11 +63,13 @@ impl GameWorld {
     pub fn draw(&mut self, renderer: &Renderer) {
         renderer.prepare(&mut self.camera);
 
-        for (entity, (num, model, texture)) in
-            self.world.query::<(&i32, &Model, &GameTexture)>().iter()
+        for (entity, (model, transform, texture)) in self
+            .world
+            .query::<(&Model, &Transform, &GameTexture)>()
+            .iter()
         {
             renderer.bind_texture(texture);
-            renderer.render(model);
+            renderer.render(model, transform);
         }
 
         renderer.end(&self.camera);

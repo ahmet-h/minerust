@@ -2,6 +2,8 @@ use glam::{ivec2, vec2, vec3, IVec2, Mat4, Vec3};
 use glow::*;
 use sdl2::video::{GLContext, Window};
 
+use crate::state::ecs::transform::Transform;
+
 use super::{
     camera::Camera,
     mesh::{Mesh, Quad, Vertex},
@@ -171,14 +173,11 @@ impl Renderer {
         }
     }
 
-    pub fn render(&self, model: &Model) {
+    pub fn render(&self, model: &Model, transform: &Transform) {
         unsafe {
             self.geometry_shader.set_used(&self.gl);
-            self.geometry_shader.set_mat4(
-                &self.gl,
-                "model",
-                Mat4::from_translation(vec3(0., 0., 0.)),
-            );
+            self.geometry_shader
+                .set_mat4(&self.gl, "model", transform.matrix());
 
             self.gl.bind_vertex_array(Some(model.vao()));
             self.gl
@@ -312,3 +311,7 @@ fn create_screen_quad(gl: &Context, quad_indices: &Vec<u32>) -> Model {
     ));
     Model::new(gl, quad_indices, &screen_mesh)
 }
+
+// fn create_skybox(gl: &Context, quad_indices: &Vec<u32>) -> Model {
+
+// }

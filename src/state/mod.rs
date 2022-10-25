@@ -8,6 +8,7 @@ use crate::render::renderer::Renderer;
 
 use self::screen::Screen;
 
+pub mod ecs;
 pub mod input;
 pub mod screen;
 pub mod world;
