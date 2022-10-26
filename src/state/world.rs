@@ -1,13 +1,15 @@
 use glam::{vec2, vec3, Vec3};
+use glow::Context;
 use hecs::World;
 use sdl2::{event::Event, keyboard::Scancode};
 
 use crate::render::{
+    self,
     camera::Camera,
     mesh::{Mesh, Quad, Vertex},
     model::Model,
     renderer::Renderer,
-    texture::GameTexture,
+    texture::{CubeMap, GameTexture, Skybox},
 };
 
 use super::{ecs::transform::Transform, input::InputState};
@@ -17,6 +19,7 @@ pub struct GameWorld {
     input: InputState,
     light_dir: Vec3,
     world: World,
+    skybox: Skybox,
 }
 
 impl GameWorld {
@@ -27,10 +30,10 @@ impl GameWorld {
 
         let mut mesh = Mesh::new();
         mesh.push_quad(Quad::new(
-            Vertex::new(vec3(-5., 0., -5.), vec3(0., 1., 0.), vec2(0., 0.)),
-            Vertex::new(vec3(-5., 0., 5.), vec3(0., 1., 0.), vec2(5., 0.)),
-            Vertex::new(vec3(5., 0., 5.), vec3(0., 1., 0.), vec2(5., 5.)),
-            Vertex::new(vec3(5., 0., -5.), vec3(0., 1., 0.), vec2(0., 5.)),
+            Vertex::new(vec3(-50., 0., -50.), vec3(0., 1., 0.), vec2(0., 0.)),
+            Vertex::new(vec3(-50., 0., 50.), vec3(0., 1., 0.), vec2(50., 0.)),
+            Vertex::new(vec3(50., 0., 50.), vec3(0., 1., 0.), vec2(50., 50.)),
+            Vertex::new(vec3(50., 0., -50.), vec3(0., 1., 0.), vec2(0., 50.)),
         ));
         let model = renderer.create_model(&mesh);
 
@@ -46,11 +49,14 @@ impl GameWorld {
             texture,
         ));
 
+        let skybox = renderer.create_skybox();
+
         Self {
             camera,
             input: Default::default(),
             light_dir: vec3(0.5, -1., -0.8).normalize(),
             world,
+            skybox,
         }
     }
 
@@ -73,6 +79,8 @@ impl GameWorld {
         }
 
         renderer.end(&self.camera);
+
+        renderer.render_skybox(self.skybox.model(), &self.camera, self.skybox.cube_map());
     }
 
     pub fn handle_input(&mut self, event: Event) {

@@ -1,4 +1,4 @@
-use glam::{ivec2, vec2, vec3, IVec2, Mat4, Vec3};
+use glam::{ivec2, vec2, vec3, IVec2, Mat3, Mat4, Vec3};
 use glow::*;
 use sdl2::video::{GLContext, Window};
 
@@ -9,7 +9,7 @@ use super::{
     mesh::{Mesh, Quad, Vertex},
     model::Model,
     shader::ShaderProgram,
-    texture::GameTexture,
+    texture::{CubeMap, GameTexture, Skybox},
 };
 
 pub struct Renderer {
@@ -17,7 +17,8 @@ pub struct Renderer {
     _gl_context: GLContext,
     quad_indices: Vec<u32>,
     geometry_shader: ShaderProgram,
-    shader: ShaderProgram,
+    lighting_shader: ShaderProgram,
+    skybox_shader: ShaderProgram,
     g_buffer: GBuffer,
     screen_quad: Model,
     dims: IVec2,
@@ -31,10 +32,15 @@ impl Renderer {
             include_str!("geometry.vert"),
             include_str!("geometry.frag"),
         );
-        let shader = ShaderProgram::new(
+        let lighting_shader = ShaderProgram::new(
             &gl,
             include_str!("lighting.vert"),
             include_str!("lighting.frag"),
+        );
+        let skybox_shader = ShaderProgram::new(
+            &gl,
+            include_str!("skybox.vert"),
+            include_str!("skybox.frag"),
         );
 
         let drawable_size = window.drawable_size();
@@ -54,17 +60,18 @@ impl Renderer {
             gl.viewport(0, 0, dims.x, dims.y);
         }
 
-        shader.set_used(&gl);
-        shader.set_int(&gl, "g_position", 0);
-        shader.set_int(&gl, "g_normal", 1);
-        shader.set_int(&gl, "g_albedo_spec", 2);
+        lighting_shader.set_used(&gl);
+        lighting_shader.set_int(&gl, "g_position", 0);
+        lighting_shader.set_int(&gl, "g_normal", 1);
+        lighting_shader.set_int(&gl, "g_albedo_spec", 2);
 
         Self {
             gl,
             _gl_context: gl_context,
             quad_indices,
             geometry_shader,
-            shader,
+            lighting_shader,
+            skybox_shader,
             g_buffer,
             screen_quad,
             dims,
@@ -93,7 +100,6 @@ impl Renderer {
 
     pub fn bind_texture(&self, texture: &GameTexture) {
         texture.bind(&self.gl, 0);
-        self.geometry_shader.set_int(&self.gl, "texture_diffuse", 0);
     }
 
     pub fn quad_indices(&self) -> &Vec<u32> {
@@ -112,6 +118,7 @@ impl Renderer {
             self.geometry_shader.set_used(&self.gl);
             self.geometry_shader
                 .set_mat4(&self.gl, "projection_view", camera.projection_view());
+            self.geometry_shader.set_int(&self.gl, "texture_diffuse", 0);
 
             self.gl.enable(DEPTH_TEST);
             // self.gl.polygon_mode(FRONT_AND_BACK, LINE);
@@ -127,7 +134,7 @@ impl Renderer {
 
             self.clear();
 
-            self.shader.set_used(&self.gl);
+            self.lighting_shader.set_used(&self.gl);
             self.gl.active_texture(TEXTURE0);
             self.gl
                 .bind_texture(TEXTURE_2D, Some(self.g_buffer.position));
@@ -139,7 +146,8 @@ impl Renderer {
 
             self.gl.disable(DEPTH_TEST);
 
-            self.shader.set_vec3(&self.gl, "view_pos", camera.pos());
+            self.lighting_shader
+                .set_vec3(&self.gl, "view_pos", camera.pos());
             self.render_screen_quad();
 
             self.gl
@@ -164,7 +172,7 @@ impl Renderer {
 
     fn render_screen_quad(&self) {
         unsafe {
-            self.shader.set_used(&self.gl);
+            self.lighting_shader.set_used(&self.gl);
 
             self.gl.bind_vertex_array(Some(self.screen_quad.vao()));
             self.gl
@@ -192,6 +200,37 @@ impl Renderer {
             self.dims.y = height;
 
             self.gl.viewport(0, 0, width, height);
+        }
+    }
+
+    pub fn create_skybox(&self) -> Skybox {
+        let cube = Mesh::from_cube(2.);
+        let model = self.create_model(&cube);
+
+        Skybox::new(&self.gl, model)
+    }
+
+    pub fn render_skybox(&self, model: &Model, camera: &Camera, cube_map: &CubeMap) {
+        unsafe {
+            self.gl.depth_func(LEQUAL);
+            self.skybox_shader.set_used(&self.gl);
+            let view = Mat4::from_mat3(Mat3::from_mat4(camera.view()));
+            let projection_view = camera.projection() * view;
+            self.skybox_shader
+                .set_mat4(&self.gl, "projection_view", projection_view);
+
+            cube_map.bind(&self.gl);
+
+            self.gl.enable(DEPTH_TEST);
+            self.gl.cull_face(FRONT);
+
+            self.gl.bind_vertex_array(Some(model.vao()));
+            self.gl
+                .draw_elements(TRIANGLES, model.len() as i32, UNSIGNED_INT, 0);
+            self.gl.bind_vertex_array(None);
+
+            self.gl.depth_func(LESS);
+            self.gl.cull_face(BACK);
         }
     }
 }

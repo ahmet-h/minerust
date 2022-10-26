@@ -103,14 +103,12 @@ impl Model {
             gl.bind_buffer(ARRAY_BUFFER, None);
         }
     }
-}
 
-// impl Drop for Model {
-//     fn drop(&mut self) {
-//         unsafe {
-//             gl::DeleteBuffers(1, &self.ebo);
-//             gl::DeleteBuffers(1, &self.vbo);
-//             gl::DeleteVertexArrays(1, &self.vao);
-//         }
-//     }
-// }
+    pub fn drop(&self, gl: &Context) {
+        unsafe {
+            gl.delete_buffer(self.ebo);
+            gl.delete_buffer(self.vbo);
+            gl.delete_vertex_array(self.vao);
+        }
+    }
+}
