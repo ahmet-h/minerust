@@ -143,14 +143,30 @@ pub struct Skybox {
 
 impl Skybox {
     pub fn new(gl: &Context, model: Model) -> Self {
+        // let images = [
+        //     "assets/skybox/right.jpg",
+        //     "assets/skybox/left.jpg",
+        //     "assets/skybox/top.jpg",
+        //     "assets/skybox/bottom.jpg",
+        //     "assets/skybox/front.jpg",
+        //     "assets/skybox/back.jpg",
+        // ];
         let images = [
-            "assets/skybox/right.jpg",
-            "assets/skybox/left.jpg",
-            "assets/skybox/top.jpg",
-            "assets/skybox/bottom.jpg",
-            "assets/skybox/front.jpg",
-            "assets/skybox/back.jpg",
+            "assets/skybox2/right.bmp",
+            "assets/skybox2/left.bmp",
+            "assets/skybox2/top.bmp",
+            "assets/skybox2/bottom.bmp",
+            "assets/skybox2/front.bmp",
+            "assets/skybox2/back.bmp",
         ];
+        // let images = [
+        //     "assets/skybox3/right.png",
+        //     "assets/skybox3/left.png",
+        //     "assets/skybox3/top.png",
+        //     "assets/skybox3/bottom.png",
+        //     "assets/skybox3/front.png",
+        //     "assets/skybox3/back.png",
+        // ];
 
         let cube_map = CubeMap::new(gl, &images);
 
