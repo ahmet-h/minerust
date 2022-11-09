@@ -10,6 +10,7 @@ const SHADOW_HEIGHT: i32 = 1024;
 
 pub struct ShadowMap {
     framebuffer: Framebuffer,
+    depth_map: Texture,
     projection: Mat4,
     view: Mat4,
     projection_view: Mat4,
@@ -38,11 +39,18 @@ impl ShadowMap {
                 None,
             );
 
-            gl.tex_parameter_i32(TEXTURE_CUBE_MAP, TEXTURE_WRAP_S, REPEAT as i32);
-            gl.tex_parameter_i32(TEXTURE_CUBE_MAP, TEXTURE_WRAP_T, REPEAT as i32);
+            gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_WRAP_S, REPEAT as i32);
+            gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_WRAP_T, REPEAT as i32);
 
-            gl.tex_parameter_i32(TEXTURE_CUBE_MAP, TEXTURE_MIN_FILTER, LINEAR as i32);
-            gl.tex_parameter_i32(TEXTURE_CUBE_MAP, TEXTURE_MAG_FILTER, LINEAR as i32);
+            gl.tex_parameter_i32(
+                TEXTURE_2D,
+                TEXTURE_COMPARE_MODE,
+                COMPARE_REF_TO_TEXTURE as i32,
+            );
+            gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_COMPARE_FUNC, LEQUAL as i32);
+
+            gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, LINEAR as i32);
+            gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR as i32);
 
             gl.bind_framebuffer(FRAMEBUFFER, Some(framebuffer));
 
@@ -56,7 +64,7 @@ impl ShadowMap {
 
             gl.bind_framebuffer(FRAMEBUFFER, None);
 
-            let projection = Mat4::orthographic_rh_gl(-10., 10., -10., 10., 1., 10.);
+            let projection = Mat4::orthographic_rh_gl(-10., 10., -10., 10., 1., 100.);
             let light_dir = vec3(0.5, -1., -0.8).normalize();
             let view = Mat4::look_at_rh(
                 vec3(0., 0., 0.) - light_dir * 10.,
@@ -70,12 +78,21 @@ impl ShadowMap {
 
             Self {
                 framebuffer,
+                depth_map,
                 projection,
                 view,
                 projection_view,
                 shader,
             }
         }
+    }
+
+    pub fn projection_view(&self) -> Mat4 {
+        self.projection_view
+    }
+
+    pub fn depth_map(&self) -> Texture {
+        self.depth_map
     }
 
     pub fn prepare(&self, gl: &Context) {
@@ -87,6 +104,7 @@ impl ShadowMap {
             self.shader.set_used(gl);
             self.shader
                 .set_mat4(gl, "projection_view", self.projection_view);
+            // gl.cull_face(FRONT);
         }
     }
 
@@ -103,6 +121,7 @@ impl ShadowMap {
 
     pub fn end(&self, gl: &Context) {
         unsafe {
+            // gl.cull_face(BACK);
             gl.bind_framebuffer(FRAMEBUFFER, None);
         }
     }

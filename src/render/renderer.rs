@@ -66,6 +66,7 @@ impl Renderer {
         lighting_shader.set_int(&gl, "g_position", 0);
         lighting_shader.set_int(&gl, "g_normal", 1);
         lighting_shader.set_int(&gl, "g_albedo_spec", 2);
+        lighting_shader.set_int(&gl, "shadow_map", 3);
 
         let shadow_map = ShadowMap::new(&gl);
 
@@ -156,11 +157,21 @@ impl Renderer {
             self.gl.active_texture(TEXTURE2);
             self.gl
                 .bind_texture(TEXTURE_2D, Some(self.g_buffer.albedo_spec));
+            self.gl.active_texture(TEXTURE3);
+            self.gl
+                .bind_texture(TEXTURE_2D, Some(self.shadow_map.depth_map()));
 
             self.gl.disable(DEPTH_TEST);
 
             self.lighting_shader
                 .set_vec3(&self.gl, "view_pos", camera.pos());
+            self.lighting_shader.set_mat4(
+                &self.gl,
+                "shadow_projection_view",
+                Mat4::from_translation(vec3(0.5, 0.5, 0.5 - 0.0005))
+                    * Mat4::from_scale(vec3(0.5, 0.5, 0.5))
+                    * self.shadow_map.projection_view(),
+            );
             self.render_screen_quad();
 
             self.gl
