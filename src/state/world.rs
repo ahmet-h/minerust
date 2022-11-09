@@ -9,6 +9,7 @@ use crate::render::{
     mesh::{Mesh, Quad, Vertex},
     model::Model,
     renderer::Renderer,
+    shadow::CastShadow,
     texture::{CubeMap, GameTexture, Skybox},
 };
 
@@ -40,6 +41,12 @@ impl GameWorld {
         let texture = renderer.create_texture("assets/wood.png");
 
         let floor = world.spawn((model, Transform::new(), texture));
+        let floor = world.spawn((
+            model,
+            Transform::from_translation(vec3(0.0, -1.0, 0.0)).flip(),
+            texture,
+            CastShadow,
+        ));
 
         let cube_mesh = Mesh::from_cube(1.0);
         let cube_model = renderer.create_model(&cube_mesh);
@@ -47,20 +54,23 @@ impl GameWorld {
             cube_model,
             Transform::from_translation(vec3(0., 0.5, 0.)),
             texture,
+            CastShadow,
         ));
 
         let cube_model = renderer.create_model(&cube_mesh);
         let cube = world.spawn((
             cube_model,
-            Transform::from_translation(vec3(1.5, 0.25, 3.)).to_scale(0.5),
+            Transform::from_translation(vec3(1.5, 0.25, 3.)).scale(0.5),
             texture,
+            CastShadow,
         ));
 
         let cube_model = renderer.create_model(&cube_mesh);
         let cube = world.spawn((
             cube_model,
-            Transform::from_translation(vec3(-3.5, 0.75, 2.)).to_scale(1.5),
+            Transform::from_translation(vec3(-3.5, 0.75, 2.)).scale(1.5),
             texture,
+            CastShadow,
         ));
 
         let skybox = renderer.create_skybox();
@@ -93,7 +103,11 @@ impl GameWorld {
         renderer.end();
 
         renderer.prepare_shadow_map();
-        for (entity, (model, transform)) in self.world.query::<(&Model, &Transform)>().iter() {
+        for (entity, (model, transform, _)) in self
+            .world
+            .query::<(&Model, &Transform, &CastShadow)>()
+            .iter()
+        {
             renderer.render_shadow_map(model, transform);
         }
         renderer.end_shadow_map();

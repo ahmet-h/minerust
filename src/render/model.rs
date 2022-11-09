@@ -3,7 +3,7 @@ use glow::*;
 
 use super::mesh::{Mesh, Vertex};
 
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct Model {
     vao: VertexArray,
     vbo: Buffer,

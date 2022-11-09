@@ -168,7 +168,7 @@ impl Renderer {
             self.lighting_shader.set_mat4(
                 &self.gl,
                 "shadow_projection_view",
-                Mat4::from_translation(vec3(0.5, 0.5, 0.5 - 0.0005))
+                Mat4::from_translation(vec3(0.5, 0.5, 0.5))
                     * Mat4::from_scale(vec3(0.5, 0.5, 0.5))
                     * self.shadow_map.projection_view(),
             );

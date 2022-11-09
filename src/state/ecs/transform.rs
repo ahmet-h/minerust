@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use glam::{vec3, Mat4, Vec3};
 
 #[derive(Clone, Copy)]
@@ -16,9 +18,15 @@ impl Transform {
         Self { mat }
     }
 
-    pub fn to_scale(self, scale: f32) -> Self {
+    pub fn scale(&self, scale: f32) -> Self {
         Self {
             mat: self.mat * Mat4::from_scale(vec3(scale, scale, scale)),
+        }
+    }
+
+    pub fn flip(&self) -> Self {
+        Self {
+            mat: self.mat * Mat4::from_rotation_x(PI),
         }
     }
 

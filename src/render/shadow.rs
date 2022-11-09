@@ -8,6 +8,9 @@ use super::{model::Model, shader::ShaderProgram};
 const SHADOW_WIDTH: i32 = 1024;
 const SHADOW_HEIGHT: i32 = 1024;
 
+#[derive(Clone, Copy, Debug)]
+pub struct CastShadow;
+
 pub struct ShadowMap {
     framebuffer: Framebuffer,
     depth_map: Texture,
@@ -104,7 +107,7 @@ impl ShadowMap {
             self.shader.set_used(gl);
             self.shader
                 .set_mat4(gl, "projection_view", self.projection_view);
-            // gl.cull_face(FRONT);
+            gl.cull_face(FRONT);
         }
     }
 
@@ -121,7 +124,7 @@ impl ShadowMap {
 
     pub fn end(&self, gl: &Context) {
         unsafe {
-            // gl.cull_face(BACK);
+            gl.cull_face(BACK);
             gl.bind_framebuffer(FRAMEBUFFER, None);
         }
     }
