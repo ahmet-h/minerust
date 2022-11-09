@@ -16,6 +16,12 @@ impl Transform {
         Self { mat }
     }
 
+    pub fn to_scale(self, scale: f32) -> Self {
+        Self {
+            mat: self.mat * Mat4::from_scale(vec3(scale, scale, scale)),
+        }
+    }
+
     pub fn matrix(&self) -> Mat4 {
         self.mat
     }

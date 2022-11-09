@@ -30,10 +30,10 @@ impl GameWorld {
 
         let mut mesh = Mesh::new();
         mesh.push_quad(Quad::new(
-            Vertex::new(vec3(-50., 0., -50.), vec3(0., 1., 0.), vec2(0., 0.)),
-            Vertex::new(vec3(-50., 0., 50.), vec3(0., 1., 0.), vec2(50., 0.)),
-            Vertex::new(vec3(50., 0., 50.), vec3(0., 1., 0.), vec2(50., 50.)),
-            Vertex::new(vec3(50., 0., -50.), vec3(0., 1., 0.), vec2(0., 50.)),
+            Vertex::new(vec3(-5., 0., -5.), vec3(0., 1., 0.), vec2(0., 0.)),
+            Vertex::new(vec3(-5., 0., 5.), vec3(0., 1., 0.), vec2(5., 0.)),
+            Vertex::new(vec3(5., 0., 5.), vec3(0., 1., 0.), vec2(5., 5.)),
+            Vertex::new(vec3(5., 0., -5.), vec3(0., 1., 0.), vec2(0., 5.)),
         ));
         let model = renderer.create_model(&mesh);
 
@@ -46,6 +46,20 @@ impl GameWorld {
         let cube = world.spawn((
             cube_model,
             Transform::from_translation(vec3(0., 0.5, 0.)),
+            texture,
+        ));
+
+        let cube_model = renderer.create_model(&cube_mesh);
+        let cube = world.spawn((
+            cube_model,
+            Transform::from_translation(vec3(1.5, 0.25, 3.)).to_scale(0.5),
+            texture,
+        ));
+
+        let cube_model = renderer.create_model(&cube_mesh);
+        let cube = world.spawn((
+            cube_model,
+            Transform::from_translation(vec3(-3.5, 0.75, 2.)).to_scale(1.5),
             texture,
         ));
 
@@ -68,7 +82,6 @@ impl GameWorld {
 
     pub fn draw(&mut self, renderer: &Renderer) {
         renderer.prepare(&mut self.camera);
-
         for (entity, (model, transform, texture)) in self
             .world
             .query::<(&Model, &Transform, &GameTexture)>()
@@ -77,8 +90,15 @@ impl GameWorld {
             renderer.bind_texture(texture);
             renderer.render(model, transform);
         }
+        renderer.end();
 
-        renderer.end(&self.camera);
+        renderer.prepare_shadow_map();
+        for (entity, (model, transform)) in self.world.query::<(&Model, &Transform)>().iter() {
+            renderer.render_shadow_map(model, transform);
+        }
+        renderer.end_shadow_map();
+
+        renderer.render_shading(&self.camera);
 
         renderer.render_skybox(self.skybox.model(), &self.camera, self.skybox.cube_map());
     }

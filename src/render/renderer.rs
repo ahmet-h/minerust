@@ -9,6 +9,7 @@ use super::{
     mesh::{Mesh, Quad, Vertex},
     model::Model,
     shader::ShaderProgram,
+    shadow::ShadowMap,
     texture::{CubeMap, GameTexture, Skybox},
 };
 
@@ -22,6 +23,7 @@ pub struct Renderer {
     g_buffer: GBuffer,
     screen_quad: Model,
     dims: IVec2,
+    shadow_map: ShadowMap,
 }
 
 impl Renderer {
@@ -65,6 +67,8 @@ impl Renderer {
         lighting_shader.set_int(&gl, "g_normal", 1);
         lighting_shader.set_int(&gl, "g_albedo_spec", 2);
 
+        let shadow_map = ShadowMap::new(&gl);
+
         Self {
             gl,
             _gl_context: gl_context,
@@ -75,6 +79,7 @@ impl Renderer {
             g_buffer,
             screen_quad,
             dims,
+            shadow_map,
         }
     }
 
@@ -108,6 +113,7 @@ impl Renderer {
 
     pub fn prepare(&self, camera: &mut Camera) {
         unsafe {
+            self.gl.viewport(0, 0, self.dims.x, self.dims.y);
             self.gl
                 .bind_framebuffer(FRAMEBUFFER, Some(self.g_buffer.framebuffer));
 
@@ -126,8 +132,15 @@ impl Renderer {
         }
     }
 
-    pub fn end(&self, camera: &Camera) {
+    pub fn end(&self) {
         unsafe {
+            self.gl.bind_framebuffer(FRAMEBUFFER, None);
+        }
+    }
+
+    pub fn render_shading(&self, camera: &Camera) {
+        unsafe {
+            self.gl.viewport(0, 0, self.dims.x, self.dims.y);
             self.gl.bind_framebuffer(FRAMEBUFFER, None);
             // self.gl.polygon_mode(FRONT_AND_BACK, FILL);
             // self.gl.enable(CULL_FACE);
@@ -192,6 +205,18 @@ impl Renderer {
                 .draw_elements(TRIANGLES, model.len() as i32, UNSIGNED_INT, 0);
             self.gl.bind_vertex_array(None);
         }
+    }
+
+    pub fn prepare_shadow_map(&self) {
+        self.shadow_map.prepare(&self.gl);
+    }
+
+    pub fn render_shadow_map(&self, model: &Model, transform: &Transform) {
+        self.shadow_map.render(&self.gl, model, transform);
+    }
+
+    pub fn end_shadow_map(&self) {
+        self.shadow_map.end(&self.gl);
     }
 
     pub fn handle_resize(&mut self, width: i32, height: i32) {
