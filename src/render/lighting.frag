@@ -13,6 +13,8 @@ uniform mat4 shadow_projection_view;
 out vec4 color;
 
 #define EPSILON 0.0001
+#define SHADOW_WIDTH 1024.0
+#define SHADOW_HEIGHT 1024.0
 
 void main() {
     vec3 position = texture(g_position, tex_coords).rgb;
@@ -33,7 +35,7 @@ void main() {
     float spec = pow(max(dot(view_dir, reflect_dir), 0.0), 8.0);
     vec3 specular = light_color * spec * specular_strength;
 
-    vec2 shadow_step = vec2(1.0 / 1024.0, 1.0 / 1024.0);
+    vec2 shadow_step = vec2(1.0 / SHADOW_WIDTH, 1.0 / SHADOW_HEIGHT);
     float shadow_factor = 0.0;
     for (int y = -1 ; y <= 1 ; y++) {
         for (int x = -1 ; x <= 1 ; x++) {
