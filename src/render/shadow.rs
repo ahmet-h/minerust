@@ -5,8 +5,8 @@ use crate::state::ecs::transform::Transform;
 
 use super::{model::Model, shader::ShaderProgram};
 
-const SHADOW_WIDTH: i32 = 1024;
-const SHADOW_HEIGHT: i32 = 1024;
+const SHADOW_WIDTH: i32 = 4096;
+const SHADOW_HEIGHT: i32 = 4096;
 
 #[derive(Clone, Copy, Debug)]
 pub struct CastShadow;
