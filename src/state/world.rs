@@ -41,12 +41,6 @@ impl GameWorld {
         let texture = renderer.create_texture("assets/wood.png");
 
         let floor = world.spawn((model, Transform::new(), texture));
-        let floor = world.spawn((
-            model,
-            Transform::from_translation(vec3(0.0, -1.0, 0.0)).flip(),
-            texture,
-            CastShadow,
-        ));
 
         let cube_mesh = Mesh::from_cube(1.0);
         let cube_model = renderer.create_model(&cube_mesh);
@@ -92,7 +86,7 @@ impl GameWorld {
 
     pub fn draw(&mut self, renderer: &Renderer) {
         renderer.prepare(&mut self.camera);
-        for (entity, (model, transform, texture)) in self
+        for (_entity, (model, transform, texture)) in self
             .world
             .query::<(&Model, &Transform, &GameTexture)>()
             .iter()
@@ -103,7 +97,7 @@ impl GameWorld {
         renderer.end();
 
         renderer.prepare_shadow_map();
-        for (entity, (model, transform, _)) in self
+        for (_entity, (model, transform, _)) in self
             .world
             .query::<(&Model, &Transform, &CastShadow)>()
             .iter()

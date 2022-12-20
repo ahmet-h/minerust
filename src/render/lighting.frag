@@ -13,8 +13,8 @@ uniform mat4 shadow_projection_view;
 out vec4 color;
 
 #define EPSILON 0.0001
-#define SHADOW_WIDTH 1024.0
-#define SHADOW_HEIGHT 1024.0
+#define SHADOW_WIDTH 4096.0
+#define SHADOW_HEIGHT 4096.0
 
 void main() {
     vec3 position = texture(g_position, tex_coords).rgb;
@@ -46,6 +46,9 @@ void main() {
     }
 
     lighting += diffuse * (0.5 + (shadow_factor / 18.0)) + specular * (shadow_factor / 9.0);
+
+    lighting = lighting / (lighting + vec3(1.0));
+    lighting = pow(lighting, vec3(1.0 / 2.2));
 
     color = vec4(lighting, 1.0);
 }
