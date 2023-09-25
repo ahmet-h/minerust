@@ -27,7 +27,7 @@ impl Screen {
         }
     }
 
-    pub fn draw(&mut self, renderer: &Renderer) {
+    pub fn draw(&mut self, renderer: &mut Renderer) {
         if let Some(w) = &mut self.world {
             w.draw(renderer);
         }

@@ -172,6 +172,8 @@ impl Renderer {
                     * Mat4::from_scale(vec3(0.5, 0.5, 0.5))
                     * self.shadow_map.projection_view(),
             );
+            self.lighting_shader
+                .set_vec3(&self.gl, "light_dir", self.shadow_map.light_dir());
             self.render_screen_quad();
 
             self.gl
@@ -218,8 +220,8 @@ impl Renderer {
         }
     }
 
-    pub fn prepare_shadow_map(&self) {
-        self.shadow_map.prepare(&self.gl);
+    pub fn prepare_shadow_map(&mut self, light_dir: &Vec3) {
+        self.shadow_map.prepare(&self.gl, light_dir);
     }
 
     pub fn render_shadow_map(&self, model: &Model, transform: &Transform) {

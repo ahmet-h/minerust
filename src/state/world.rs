@@ -1,4 +1,6 @@
-use glam::{vec2, vec3, Vec3};
+use std::f32::consts::PI;
+
+use glam::{vec2, vec3, vec4, Mat4, Vec3};
 use glow::Context;
 use hecs::World;
 use sdl2::{event::Event, keyboard::Scancode};
@@ -21,6 +23,7 @@ pub struct GameWorld {
     light_dir: Vec3,
     world: World,
     skybox: Skybox,
+    light_angle: f32,
 }
 
 impl GameWorld {
@@ -40,7 +43,7 @@ impl GameWorld {
 
         let texture = renderer.create_texture("assets/wood.png");
 
-        let floor = world.spawn((model, Transform::new(), texture));
+        let floor = world.spawn((model, Transform::new(), texture, CastShadow));
 
         let cube_mesh = Mesh::from_cube(1.0);
         let cube_model = renderer.create_model(&cube_mesh);
@@ -75,6 +78,7 @@ impl GameWorld {
             light_dir: vec3(0.5, -1., -0.8).normalize(),
             world,
             skybox,
+            light_angle: 0.0f32,
         }
     }
 
@@ -82,9 +86,16 @@ impl GameWorld {
 
     pub fn update(&mut self, delta: f32) {
         self.camera.update_movement(&self.input, delta);
+
+        let rotmat = Mat4::from_rotation_z(self.light_angle);
+        self.light_angle = PI * delta / 20.0;
+
+        let light_dir = rotmat * vec4(self.light_dir.x, self.light_dir.y, self.light_dir.z, 0.);
+
+        self.light_dir = vec3(light_dir.x, light_dir.y, light_dir.z).normalize();
     }
 
-    pub fn draw(&mut self, renderer: &Renderer) {
+    pub fn draw(&mut self, renderer: &mut Renderer) {
         renderer.prepare(&mut self.camera);
         for (_entity, (model, transform, texture)) in self
             .world
@@ -96,7 +107,7 @@ impl GameWorld {
         }
         renderer.end();
 
-        renderer.prepare_shadow_map();
+        renderer.prepare_shadow_map(&self.light_dir);
         for (_entity, (model, transform, _)) in self
             .world
             .query::<(&Model, &Transform, &CastShadow)>()
