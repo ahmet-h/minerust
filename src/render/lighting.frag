@@ -9,6 +9,7 @@ uniform sampler2DShadow shadow_map;
 
 uniform vec3 view_pos;
 uniform mat4 shadow_projection_view;
+uniform vec3 light_dir;
 
 out vec4 color;
 
@@ -32,7 +33,6 @@ void main() {
     vec3 lighting = albedo * 0.2;
     vec3 view_dir = normalize(view_pos - position);
 
-    vec3 light_dir = normalize(vec3(0.5, -1.0, -0.8));
     vec3 diffuse = max(dot(-light_dir, normal), 0.0) * albedo * light_color;
 
     vec3 reflect_dir = reflect(light_dir, normal);

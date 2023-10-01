@@ -1,4 +1,4 @@
-use glam::{vec3, Mat4};
+use glam::{vec3, Mat4, Vec3};
 use glow::*;
 
 use crate::state::ecs::transform::Transform;
@@ -17,6 +17,7 @@ pub struct ShadowMap {
     projection: Mat4,
     view: Mat4,
     projection_view: Mat4,
+    light_dir: Vec3,
     shader: ShaderProgram,
 }
 
@@ -85,6 +86,7 @@ impl ShadowMap {
                 projection,
                 view,
                 projection_view,
+                light_dir,
                 shader,
             }
         }
@@ -94,15 +96,48 @@ impl ShadowMap {
         self.projection_view
     }
 
+    fn get_view_matrix(&self, light_dir: &Vec3) -> Mat4 {
+        Mat4::look_at_rh(
+            vec3(0., 0., 0.) - *light_dir * 10.,
+            vec3(0., 0., 0.),
+            vec3(0., 1., 0.),
+        )
+    }
+
+    fn get_projection_matrix(&self) -> Mat4 {
+        Mat4::orthographic_rh_gl(-10., 10., -10., 10., 1., 100.)
+    }
+
+    pub fn update_view_matrix(&mut self, light_dir: &Vec3) {
+        self.view = self.get_view_matrix(light_dir);
+    }
+
+    pub fn update_projection_matrix(&mut self) {
+        self.projection = self.get_projection_matrix();
+    }
+
+    pub fn update_projection_view_matrix(&mut self, light_dir: &Vec3) {
+        self.update_view_matrix(light_dir);
+        self.update_projection_matrix();
+        self.projection_view = self.projection * self.view;
+    }
+
     pub fn depth_map(&self) -> Texture {
         self.depth_map
     }
 
-    pub fn prepare(&self, gl: &Context) {
+    pub fn light_dir(&self) -> Vec3 {
+        self.light_dir
+    }
+
+    pub fn prepare(&mut self, gl: &Context, light_dir: &Vec3) {
         unsafe {
             gl.viewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
             gl.bind_framebuffer(FRAMEBUFFER, Some(self.framebuffer));
             gl.clear(DEPTH_BUFFER_BIT);
+
+            self.light_dir = *light_dir;
+            self.update_projection_view_matrix(light_dir);
 
             self.shader.set_used(gl);
             self.shader

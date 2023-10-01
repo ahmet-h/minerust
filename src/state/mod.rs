@@ -34,7 +34,7 @@ impl GameState {
     }
 
     pub fn draw(&mut self) {
-        self.screen.draw(&self.renderer);
+        self.screen.draw(&mut self.renderer);
     }
 
     pub fn handle_input(&mut self, event: Event) {
