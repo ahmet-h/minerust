@@ -1,10 +1,15 @@
 use glow::Context;
+use render::renderer::Renderer;
 use sdl2::{
-    video::{GLProfile, Window},
+    event::{Event, WindowEvent},
+    keyboard::Keycode,
+    video::{GLContext, GLProfile, Window},
     Sdl,
 };
+use state::screen::Screen;
 
 pub mod render;
+pub mod state;
 
 pub struct App {
     config: AppConfig,
@@ -15,7 +20,11 @@ pub struct App {
 
 impl App {
     pub fn new() -> Self {
-        App::default()
+        let mut app = App::default();
+
+        app.init();
+
+        app
     }
 
     fn init(&mut self) {
@@ -60,10 +69,110 @@ impl App {
         );
 
         self.sdl = Some(sdl_context);
+        self.state = Some(AppState::new(gl, gl_context, &window));
         self.window = Some(window);
     }
 
-    pub fn run(&self) {}
+    pub fn run(&self) {
+        let sdl_context = self.sdl.as_ref().unwrap();
+        let window = self.window.as_ref().unwrap();
+        let state = self.state.as_ref().unwrap();
+
+        let timer = sdl_context.timer().unwrap();
+        let mut ticks = timer.performance_counter();
+        let mut prev_ticks = ticks;
+        let mut fps = 0;
+        let mut t = 0;
+        let mut acc: u64 = 0;
+        let performance_freq = timer.performance_frequency();
+        let fixed_timestep: u64 = performance_freq / 40;
+
+        let mouse = sdl_context.mouse();
+        mouse.show_cursor(false);
+        mouse.warp_mouse_in_window(
+            &window,
+            self.config.window_width as i32 / 2,
+            self.config.window_height as i32 / 2,
+        );
+        mouse.set_relative_mouse_mode(true);
+        let mut grab_mouse = true;
+
+        // let sleep_duration = Duration::new(0, 1_000_000_000u32 / 1000);
+        let mut event_pump = sdl_context.event_pump().unwrap();
+        'running: loop {
+            for event in event_pump.poll_iter() {
+                // let screen = game_state.screen_mut();
+                match event {
+                    Event::Quit { .. }
+                    | Event::KeyDown {
+                        keycode: Some(Keycode::Escape),
+                        ..
+                    } => break 'running,
+                    Event::Window {
+                        win_event: WindowEvent::FocusLost,
+                        ..
+                    } => {
+                        grab_mouse = false;
+                    }
+                    Event::Window {
+                        win_event: WindowEvent::FocusGained,
+                        ..
+                    } => {
+                        grab_mouse = true;
+                    }
+                    Event::Window {
+                        win_event: WindowEvent::SizeChanged(w, h),
+                        ..
+                    } => {
+                        println!("Window Resized: ({}, {})", w, h);
+                        // game_state.handle_resize(&window);
+                    }
+                    _ => {
+                        if grab_mouse {
+                            // game_state.handle_input(event);
+                        }
+                    }
+                }
+            }
+
+            if grab_mouse {
+                // Fix for relative mouse mode not working properly on Windows with custom dpi settings
+                // mouse.warp_mouse_in_window(window, WINDOW_WIDTH as i32 / 2, WINDOW_HEIGHT as i32 / 2);
+            }
+
+            ticks = timer.performance_counter();
+            let delta = ticks - prev_ticks;
+            acc += delta;
+
+            t += delta;
+            if t >= performance_freq {
+                t -= performance_freq;
+                println!("FPS: {}", fps);
+                fps = 0;
+            }
+            fps += 1;
+
+            prev_ticks = ticks;
+
+            while acc >= fixed_timestep {
+                // save prev state
+
+                acc -= fixed_timestep;
+
+                // physics_update(&mut game_state);
+            }
+
+            // update(&mut game_state, delta as f32 / performance_freq as f32);
+
+            let alpha = acc as f32 / fixed_timestep as f32;
+
+            // render(&mut game_state, alpha);
+
+            window.gl_swap_window();
+
+            // std::thread::sleep(sleep_duration);
+        }
+    }
 }
 
 impl Default for App {
@@ -99,4 +208,19 @@ impl Default for AppConfig {
     }
 }
 
-pub struct AppState {}
+pub struct AppState {
+    renderer: Renderer,
+    screens: Vec<Screen>,
+}
+
+impl AppState {
+    pub fn new(gl: Context, gl_context: GLContext, window: &Window) -> Self {
+        let renderer = Renderer::new(gl, gl_context, window);
+        let screen = Screen::new(&renderer);
+
+        let mut screens = Vec::<Screen>::new();
+        screens.push(screen);
+
+        Self { renderer, screens }
+    }
+}
