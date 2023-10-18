@@ -73,10 +73,10 @@ impl App {
         self.window = Some(window);
     }
 
-    pub fn run(&self) {
+    pub fn run(&mut self) {
         let sdl_context = self.sdl.as_ref().unwrap();
         let window = self.window.as_ref().unwrap();
-        let state = self.state.as_ref().unwrap();
+        let state = self.state.as_mut().unwrap();
 
         let timer = sdl_context.timer().unwrap();
         let mut ticks = timer.performance_counter();
@@ -87,15 +87,8 @@ impl App {
         let performance_freq = timer.performance_frequency();
         let fixed_timestep: u64 = performance_freq / 40;
 
-        let mouse = sdl_context.mouse();
-        mouse.show_cursor(false);
-        mouse.warp_mouse_in_window(
-            &window,
-            self.config.window_width as i32 / 2,
-            self.config.window_height as i32 / 2,
-        );
-        mouse.set_relative_mouse_mode(true);
-        let mut grab_mouse = true;
+        let mut mouse = sdl_context.mouse();
+        let mut grab_mouse = false;
 
         // let sleep_duration = Duration::new(0, 1_000_000_000u32 / 1000);
         let mut event_pump = sdl_context.event_pump().unwrap();
@@ -108,18 +101,18 @@ impl App {
                         keycode: Some(Keycode::Escape),
                         ..
                     } => break 'running,
-                    Event::Window {
-                        win_event: WindowEvent::FocusLost,
-                        ..
-                    } => {
-                        grab_mouse = false;
-                    }
-                    Event::Window {
-                        win_event: WindowEvent::FocusGained,
-                        ..
-                    } => {
-                        grab_mouse = true;
-                    }
+                    // Event::Window {
+                    //     win_event: WindowEvent::FocusLost,
+                    //     ..
+                    // } => {
+                    //     grab_mouse = false;
+                    // }
+                    // Event::Window {
+                    //     win_event: WindowEvent::FocusGained,
+                    //     ..
+                    // } => {
+                    //     grab_mouse = true;
+                    // }
                     Event::Window {
                         win_event: WindowEvent::SizeChanged(w, h),
                         ..
@@ -131,13 +124,22 @@ impl App {
                         if grab_mouse {
                             // game_state.handle_input(event);
                         }
+
+                        state.handle_input(event);
                     }
                 }
             }
 
-            if grab_mouse {
-                // Fix for relative mouse mode not working properly on Windows with custom dpi settings
-                // mouse.warp_mouse_in_window(window, WINDOW_WIDTH as i32 / 2, WINDOW_HEIGHT as i32 / 2);
+            if grab_mouse != state.is_mouse_grabbed() {
+                grab_mouse = state.is_mouse_grabbed();
+                mouse.set_relative_mouse_mode(grab_mouse);
+                mouse.show_cursor(!grab_mouse);
+
+                mouse.warp_mouse_in_window(
+                    window,
+                    self.config.window_width as i32 / 2,
+                    self.config.window_height as i32 / 2,
+                );
             }
 
             ticks = timer.performance_counter();
@@ -218,9 +220,22 @@ impl AppState {
         let renderer = Renderer::new(gl, gl_context, window);
         let screen = Screen::new(&renderer);
 
-        let mut screens = Vec::<Screen>::new();
-        screens.push(screen);
+        let screens = vec![screen];
 
         Self { renderer, screens }
+    }
+
+    pub fn handle_input(&mut self, event: Event) {
+        if let Some(screen) = self.screens.last_mut() {
+            screen.handle_input(event);
+        }
+    }
+
+    pub fn is_mouse_grabbed(&self) -> bool {
+        if let Some(screen) = self.screens.last() {
+            return screen.is_mouse_grabbed();
+        }
+
+        false
     }
 }
