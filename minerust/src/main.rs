@@ -1,5 +1,5 @@
-use common::App;
+use common::AppBuilder;
 
 fn main() {
-    App::new().run();
+    AppBuilder::new().build().run();
 }

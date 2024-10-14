@@ -1,11 +1,15 @@
+use glam::vec3;
 use hecs::World;
 use sdl2::{event::Event, keyboard::Scancode, mouse::MouseButton};
+
+use crate::render::camera::Camera;
 
 use super::input::InputState;
 
 pub struct GameWorld {
     input: InputState,
     world: World,
+    camera: Camera,
 }
 
 impl GameWorld {
@@ -13,6 +17,7 @@ impl GameWorld {
         Self {
             input: Default::default(),
             world: World::new(),
+            camera: Camera::new(vec3(0., 1., 0.)),
         }
     }
 
@@ -51,9 +56,9 @@ impl GameWorld {
                 ..
             } => self.input.left = false,
             Event::MouseMotion { xrel, yrel, .. } => {
-                // self.camera.add_yaw(xrel as f32 * 0.2);
-                // self.camera.add_pitch(-yrel as f32 * 0.2);
-                // self.camera.update();
+                self.camera.add_yaw(xrel as f32 * 0.2);
+                self.camera.add_pitch(-yrel as f32 * 0.2);
+                self.camera.update();
             }
             Event::KeyDown {
                 scancode: Some(Scancode::Space),
