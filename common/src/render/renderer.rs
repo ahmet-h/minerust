@@ -2,6 +2,8 @@ use glam::{ivec2, IVec2};
 use glow::*;
 use sdl2::video::{GLContext, Window};
 
+use super::{mesh::Mesh, model::Model, vertex::Vertex};
+
 pub struct Renderer {
     gl: Context,
     _gl_context: GLContext,
@@ -18,6 +20,22 @@ impl Renderer {
             _gl_context,
             dims,
         }
+    }
+
+    /// # Safety
+    pub unsafe fn gl(&self) -> &Context {
+        &self.gl
+    }
+
+    pub fn clear(&self) {
+        unsafe {
+            self.gl.clear_color(0., 0., 0., 1.);
+            self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+        }
+    }
+
+    pub fn create_model<V: Vertex>(&self, mesh: &Mesh<V>) -> Model<V> {
+        Model::new(&self.gl, mesh)
     }
 
     pub fn handle_resize(&mut self, width: i32, height: i32) {

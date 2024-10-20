@@ -11,7 +11,7 @@ pub struct Screen {
 impl Screen {
     pub fn new(renderer: &Renderer) -> Self {
         Self {
-            world: Some(GameWorld::new()),
+            world: Some(GameWorld::new(renderer)),
         }
     }
 

@@ -1,8 +1,8 @@
-use glam::vec3;
+use glam::{vec2, vec3};
 use hecs::World;
 use sdl2::{event::Event, keyboard::Scancode, mouse::MouseButton};
 
-use crate::render::camera::Camera;
+use crate::render::{camera::Camera, mesh::Mesh, pipelines::sky::SkyVertex, renderer::Renderer};
 
 use super::input::InputState;
 
@@ -13,7 +13,21 @@ pub struct GameWorld {
 }
 
 impl GameWorld {
-    pub fn new() -> Self {
+    pub fn new(renderer: &Renderer) -> Self {
+        let sky = vec![
+            SkyVertex::new(vec2(-1.0, 1.0)),
+            SkyVertex::new(vec2(1.0, 1.0)),
+            SkyVertex::new(vec2(1.0, -1.0)),
+            SkyVertex::new(vec2(-1.0, -1.0)),
+        ];
+
+        let mut sky_mesh = Mesh::new();
+        for s in sky {
+            sky_mesh.push(s);
+        }
+
+        let sky_model = renderer.create_model(&sky_mesh);
+
         Self {
             input: Default::default(),
             world: World::new(),
@@ -76,11 +90,5 @@ impl GameWorld {
 
     pub fn is_mouse_grabbed(&self) -> bool {
         self.input.grab_mouse
-    }
-}
-
-impl Default for GameWorld {
-    fn default() -> Self {
-        Self::new()
     }
 }
