@@ -26,6 +26,18 @@ impl AppState {
         Self { renderer, screens }
     }
 
+    pub fn update(&mut self, delta: f32) {
+        if let Some(screen) = self.screens.last_mut() {
+            screen.update(delta);
+        }
+    }
+
+    pub fn render(&mut self) {
+        if let Some(screen) = self.screens.last_mut() {
+            screen.render(&mut self.renderer);
+        }
+    }
+
     pub fn handle_input(&mut self, event: Event) {
         if let Some(screen) = self.screens.last_mut() {
             screen.handle_input(event);

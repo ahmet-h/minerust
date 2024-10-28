@@ -21,6 +21,10 @@ pub struct Camera {
     view: Mat4,
     projection: Mat4,
     projection_view: Mat4,
+
+    inv_view: Mat4,
+    inv_projection: Mat4,
+    inv_view_projection: Mat4,
 }
 
 impl Camera {
@@ -131,16 +135,19 @@ impl Camera {
 
     pub fn update_view_matrix(&mut self) {
         self.view = self.get_view_matrix();
+        self.inv_view = self.view.inverse();
     }
 
     pub fn update_projection_matrix(&mut self, aspect_ratio: f32) {
         self.projection = self.get_projection_matrix(aspect_ratio);
+        self.inv_projection = self.projection.inverse();
     }
 
     pub fn update_projection_view_matrix(&mut self, aspect_ratio: f32) {
         self.update_view_matrix();
         self.update_projection_matrix(aspect_ratio);
         self.projection_view = self.projection * self.view;
+        self.inv_view_projection = self.inv_view * self.inv_projection;
     }
 
     pub fn view(&self) -> Mat4 {
@@ -153,6 +160,18 @@ impl Camera {
 
     pub fn projection_view(&self) -> Mat4 {
         self.projection_view
+    }
+
+    pub fn inv_view(&self) -> Mat4 {
+        self.inv_view
+    }
+
+    pub fn inv_projection(&self) -> Mat4 {
+        self.inv_projection
+    }
+
+    pub fn inv_view_projection(&self) -> Mat4 {
+        self.inv_view_projection
     }
 }
 
@@ -175,6 +194,10 @@ impl Default for Camera {
             projection: Default::default(),
             view: Default::default(),
             projection_view: Default::default(),
+
+            inv_view: Default::default(),
+            inv_projection: Default::default(),
+            inv_view_projection: Default::default(),
         }
     }
 }

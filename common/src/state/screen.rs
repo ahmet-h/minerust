@@ -15,6 +15,18 @@ impl Screen {
         }
     }
 
+    pub fn update(&mut self, delta: f32) {
+        if let Some(w) = &mut self.world {
+            w.update(delta);
+        }
+    }
+
+    pub fn render(&mut self, renderer: &mut Renderer) {
+        if let Some(w) = &mut self.world {
+            w.render(renderer);
+        }
+    }
+
     pub fn handle_input(&mut self, event: Event) {
         if let Some(w) = &mut self.world {
             w.handle_input(event);

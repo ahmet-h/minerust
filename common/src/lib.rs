@@ -102,16 +102,24 @@ impl App {
                 // physics_update(&mut game_state);
             }
 
-            // update(&mut game_state, delta as f32 / performance_freq as f32);
+            self.update(delta as f32 / performance_freq as f32);
 
             let alpha = acc as f32 / fixed_timestep as f32;
 
-            // render(&mut game_state, alpha);
+            self.render(alpha);
 
             self.window.gl_swap_window();
 
             // std::thread::sleep(sleep_duration);
         }
+    }
+
+    fn update(&mut self, delta: f32) {
+        self.state.update(delta);
+    }
+
+    fn render(&mut self, _alpha: f32) {
+        self.state.render();
     }
 }
 
