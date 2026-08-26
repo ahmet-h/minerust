@@ -2,7 +2,9 @@ use glam::{vec2, vec3};
 use hecs::World;
 use sdl2::{event::Event, keyboard::Scancode, mouse::MouseButton};
 
-use crate::render::{camera::Camera, mesh::Mesh, pipelines::sky::SkyVertex, renderer::Renderer};
+use crate::render::{
+    camera::Camera, mesh::Mesh, model::Model, pipelines::sky::SkyVertex, renderer::Renderer,
+};
 
 use super::input::InputState;
 
@@ -10,6 +12,7 @@ pub struct GameWorld {
     input: InputState,
     world: World,
     camera: Camera,
+    sky: Model<SkyVertex>,
 }
 
 impl GameWorld {
@@ -32,7 +35,18 @@ impl GameWorld {
             input: Default::default(),
             world: World::new(),
             camera: Camera::new(vec3(0., 1., 0.)),
+            sky: sky_model,
         }
+    }
+
+    pub fn update(&mut self, delta: f32) {
+        self.camera.update_movement(&self.input, delta);
+    }
+
+    pub fn render(&mut self, renderer: &mut Renderer) {
+        renderer.prepare(&mut self.camera);
+
+        renderer.render_sky(&self.sky);
     }
 
     pub fn handle_input(&mut self, event: Event) {

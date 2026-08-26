@@ -52,6 +52,13 @@ impl<V: Vertex> Model<V> {
                 offset += size.1;
             }
 
+            let vertices = mesh.vertices();
+            let vbo_data = core::slice::from_raw_parts(
+                vertices.as_ptr() as *const u8,
+                vertices.len() * std::mem::size_of::<V>(),
+            );
+            gl.buffer_data_u8_slice(ARRAY_BUFFER, vbo_data, STATIC_DRAW);
+
             gl.bind_vertex_array(None);
             gl.bind_buffer(ELEMENT_ARRAY_BUFFER, None);
             gl.bind_buffer(ARRAY_BUFFER, None);
@@ -66,6 +73,22 @@ impl<V: Vertex> Model<V> {
         };
 
         model
+    }
+
+    pub fn vao(&self) -> VertexArray {
+        self.vao
+    }
+
+    pub fn vbo(&self) -> Buffer {
+        self.vbo
+    }
+
+    pub fn ebo(&self) -> Buffer {
+        self.ebo
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
     }
 }
 
